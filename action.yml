@@ -1,12 +1,16 @@
 name: "SQL Naming Guard"
 description: "Fail if SQL scripts use database-qualified table names"
-author: "Your Team"
 
 inputs:
   sql-path:
     description: "Directory containing SQL files"
     required: false
     default: "."
+
+  strict:
+    description: "Enable strict mode (scan entire SQL)"
+    required: false
+    default: "false"
 
 runs:
   using: "composite"
@@ -15,4 +19,5 @@ runs:
       shell: bash
       run: |
         chmod +x "${{ github.action_path }}/check_sql_no_database_prefix.sh"
+        STRICT_MODE="${{ inputs.strict }}" \
         "${{ github.action_path }}/check_sql_no_database_prefix.sh" "${{ inputs.sql-path }}"

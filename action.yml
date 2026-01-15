@@ -1,0 +1,18 @@
+name: "SQL Naming Guard"
+description: "Fail if SQL scripts use database-qualified table names"
+author: "Your Team"
+
+inputs:
+  sql-path:
+    description: "Directory containing SQL files"
+    required: false
+    default: "."
+
+runs:
+  using: "composite"
+  steps:
+    - name: Run SQL validation
+      shell: bash
+      run: |
+        chmod +x "${{ github.action_path }}/check_sql_no_database_prefix.sh"
+        "${{ github.action_path }}/check_sql_no_database_prefix.sh" "${{ inputs.sql-path }}"

@@ -8,7 +8,12 @@ inputs:
     default: "."
 
   strict:
-    description: "Enable strict mode (scan entire SQL)"
+    description: "Enable strict mode"
+    required: false
+    default: "false"
+
+  changed-only:
+    description: "Scan only new or changed SQL files"
     required: false
     default: "false"
 
@@ -20,4 +25,6 @@ runs:
       run: |
         chmod +x "${{ github.action_path }}/check_sql_no_database_prefix.sh"
         STRICT_MODE="${{ inputs.strict }}" \
+        CHANGED_ONLY="${{ inputs.changed-only }}" \
         "${{ github.action_path }}/check_sql_no_database_prefix.sh" "${{ inputs.sql-path }}"
+

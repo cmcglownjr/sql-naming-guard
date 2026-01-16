@@ -8,9 +8,9 @@ CHANGED_ONLY="${CHANGED_ONLY:-false}"
 violations=0
 
 echo "Scanning SQL files for disallowed database-qualified table references"
-echo "  SQL path      : $SQL_DIR"
-echo "  Strict mode   : $STRICT_MODE"
-echo "  Changed only  : $CHANGED_ONLY"
+echo "  SQL path     : $SQL_DIR"
+echo "  Strict mode  : $STRICT_MODE"
+echo "  Changed only : $CHANGED_ONLY"
 
 get_changed_sql_files() {
     local files=""
@@ -28,7 +28,7 @@ get_changed_sql_files() {
         esac
     fi
 
-    echo "$files" | grep -E '^.*\.sql$' || true
+    echo "$files" | grep -E '\.sql$' || true
 }
 
 if [[ "$CHANGED_ONLY" == "true" ]]; then
@@ -43,30 +43,32 @@ else
 fi
 
 for file in "${sql_files[@]}"; do
-    if [[ ! -f "$file" ]]; then
-        continue
-    fi
+    [[ -f "$file" ]] || continue
 
-    # Skip explicitly ignored files
+    # Explicit ignore
     if grep -qi "sql-naming-guard:ignore" "$file"; then
         echo "↷ Skipping $file (explicit ignore)"
         continue
     fi
 
+    # Strip single-line comments
     cleaned=$(sed \
         -e 's/--.*$//' \
         -e 's/#.*$//' \
         "$file")
 
     if [[ "$STRICT_MODE" == "true" ]]; then
+        # database.table anywhere
         if echo "$cleaned" | grep -Ein '\b[a-zA-Z0-9_]+\.[a-zA-Z0-9_]+' > /dev/null; then
             echo "::error file=$file::Database-qualified table found (strict mode)"
             violations=$((violations + 1))
         fi
     else
+        # FROM / JOIN / CREATE / ALTER / DROP
         if echo "$cleaned" | grep -Ein \
-            '\b(FROM|JOIN)\s+[a-zA-Z0-9_]+\.[a-zA-Z0-9_]+' > /dev/null; then
-            echo "::error file=$file::Database-qualified table found (FROM/JOIN)"
+            '\b(FROM|JOIN|CREATE\s+TABLE|ALTER\s+TABLE|DROP\s+TABLE)\s+[a-zA-Z0-9_]+\.[a-zA-Z0-9_]+' \
+            > /dev/null; then
+            echo "::error file=$file::Database-qualified table found in DDL/DML"
             violations=$((violations + 1))
         fi
     fi
